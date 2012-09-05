@@ -1,5 +1,7 @@
 #!/bin/bash
 
+DEBUG=1
+
 workdir="/var/comics"
 template="gen.tmpl"
 
@@ -11,7 +13,7 @@ if [ -f *.cbz ] && [ -f *.cbr ] ; then
     exit 1
 fi
 
-cmd="unrar x "
+cmd="unrar e "
 file=$(ls *cbr)
 if [ -z "$file" ] ; then
     cmd="unzip"
@@ -50,6 +52,6 @@ chmod +x ./gen.pl
 echo "Generating HTML files..."
 ./gen.pl
 echo "Cleaning up.."
-#rm ./jpg$$.include
-#rm ./gen$$.pl
-#rm ./gen.pl
+[[ $DEBUG == 1 ]] || rm ./jpg$$.include
+[[ $DEBUG == 1 ]] || rm ./gen$$.pl
+[[ $DEBUG == 1 ]] || rm ./gen.pl
