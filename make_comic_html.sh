@@ -1,57 +1,33 @@
-#!/bin/bash
+#!/usr/local/bin/bash
+#
+# convert all the CBR/CBZ files in a given directory to HTML
+# depends on the shell/perl script cb2html.sh exists in $PATH
+# all code by John Newman jnn@synfin.org 09/15
 
-DEBUG=1
-
-workdir="/var/comics"
-template="gen.tmpl"
-
-tmpl="${workdir}/${template}"
-
-
-if [ -f *.cbz ] && [ -f *.cbr ] ; then
-    echo "This script requires ONE cbr or cbz file only to function properly."
-    exit 1
-fi
-
-cmd="unrar e "
-file=$(ls *cbr)
-if [ -z "$file" ] ; then
-    cmd="unzip"
-    file=$(ls *cbz) 
-    if [ -z "$file" ] ; then
-        echo "This script requires at least one cbr or cbz file to function."
-        exit 1
-    fi
-    n=0
-    for i in $file ; do 
-        n=$((n + 1))
+make_html_comics () 
+{ 
+    _cwd=$(pwd);
+    for f in *[Cc][Bb][RrZz] ; 
+    do
+        dir=$(echo $f | awk -F. '{ print $1 }');
+        mkdir "${_cwd}/$dir";
+        mv "$f" "${_cwd}/$dir";
+        cd "${_cwd}/$dir";
+        cbr2html.sh;
+        cd "${_cwd}";
     done
-    if [[ "$n" > 1 ]] ; then
-        echo "This script requires ONE cbr or cbz file only to function properly."
-        exit 1
-    fi
+}
+
+export PATH=$PATH:~/bin/
+
+if [ -n "$1" ] ; then
+    dir="$1"
+else
+    dir="."
 fi
-echo Ëxtracting $file...
-echo $cmd \"$file\"
-$cmd "${file}"
 
-echo my @img_src = \( >> gen$$.pl
-jpg_count=$(ls -1 --color=never *jpg | wc -l)
-ls -1 --color=never *jpg | sed "s/^/'/" | sed "s/\$/'/" > jpg$$.include
-last=$((jpg_count - 1))
-sed -i "1,${last}s/$/, /" jpg$$.include
-sed -i "${jpg_count},${jpg_count}s/$/); /" jpg$$.include
+cd "$dir" &> /dev/null || { echo -e "Usage: $0 [dir]\n Fatal error - could not access directory '$dir'\n" ; exit 1; }
 
-echo "#!/usr/bin/perl" >> gen.pl
-echo >> gen.pl
-cat gen$$.pl >> gen.pl
-cat jpg$$.include >> gen.pl
-cat "$tmpl" >> gen.pl
-chmod +x ./gen.pl
-
-echo "Generating HTML files..."
-./gen.pl
-echo "Cleaning up.."
-[[ $DEBUG == 1 ]] || rm ./jpg$$.include
-[[ $DEBUG == 1 ]] || rm ./gen$$.pl
-[[ $DEBUG == 1 ]] || rm ./gen.pl
+echo "$0: operating on directory '$dir' (" $(pwd) ")"
+make_html_comics
+exit 0
