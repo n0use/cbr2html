@@ -1,4 +1,10 @@
 #!/bin/bash
+#
+# convert a single CBR/CBZ file in a given directory to HTML, generate a
+# perl script which generates an HTML file for each jpg/image extracted from
+# the CBR/CBZ archive file, and also generates an index.html
+#
+# all code by John Newman jnn@synfin.org 09/15
 
 DEBUG=0
 
