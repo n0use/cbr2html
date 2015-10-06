@@ -10,6 +10,11 @@ DEBUG=0
 
 workdir="${HOME}/var/cbr2html"
 template="gen.tmpl"
+
+# we prefer gnu-sed - required on *BSD / OSX platforms, regular sed is fine on Linux (cause its already GNU sed..)
+sed=$(which gsed)
+[ -z "$sed" ] || [ ! -x "$sed" ] && sed="$(which sed)"
+
 ls=$(which ls)
 
 tmpl="${workdir}/${template}"
@@ -58,11 +63,11 @@ echo my @img_src = \( >> gen$$.pl
 jpg_count=$($ls -1  *.[jJ][pP][gG] | wc -l)
 last=$((jpg_count - 1))
 $ls -1  *[jJ][pP][gG]  > jpg$$.include
-gsed -i "s/'/\\\'/g" jpg$$.include
-gsed -i "s/^/'/" jpg$$.include 
-gsed -i "s/\$/'/" jpg$$.include
-gsed -i "1,${last}s/$/, /" jpg$$.include
-gsed -i "${jpg_count},${jpg_count}s/$/); /" jpg$$.include
+$sed -i "s/'/\\\'/g" jpg$$.include
+$sed -i "s/^/'/" jpg$$.include 
+$sed -i "s/\$/'/" jpg$$.include
+$sed -i "1,${last}s/$/, /" jpg$$.include
+$sed -i "${jpg_count},${jpg_count}s/$/); /" jpg$$.include
 
 echo "#!/usr/local/bin/perl" >> gen.pl
 echo >> gen.pl
