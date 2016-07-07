@@ -1,33 +1,71 @@
 #!/bin/bash
-#
-# convert a single CBR/CBZ file in a given directory to HTML, generate a
-# perl script which generates an HTML file for each jpg/image extracted from
-# the CBR/CBZ archive file, and also generates an index.html
-#
-# all code by John Newman jnn@synfin.org 09/15
+
+function do_help()
+{
+    cat <<EOF
+Usage: $0 [opts]
+
+ There must be a single cbr or cbz file present in the working
+ directory for the script to process.  For batch processing of
+ multiple files/directories, look at the makeCBRdirs and makeCBR
+ commands.
+
+ Supported options are -
+
+ -c|-clean|--clean
+      used to clean up garbage template files and perl source,
+      left-overs that may be present after a failed or aborted run
+
+ -d|-debug|--debug
+      enable debug mode - this leaves the template (tmpl) and the
+      auto-generated perl scripts in place, without cleaning them
+      up.  It also increases verbosity of reporting.
+
+ -r|-removecbr|--removecbr
+      normally $0 does NOT remove the source cbr/cbz file that is
+      being processed... With this option, it WILL remove that file
+
+ -h|-help|--help
+      the usage help you are reading now
+
+EOF
+}
+
+
+function check_args()
+{
+    for arg in $* ; do
+        if [[ $arg =~ ^-d|^-debug|^--debug ]] ; then
+            DEBUG=1
+        elif [[ $arg =~ ^-c|^-clean|^--clean ]] ; then
+            CLEAN=1
+        elif [[ $arg =~ ^-r|^--remove|^-remove ]] ; then
+            REMOVE_CBR=1
+        elif [[ $arg =~ ^-h|^-help|^--help ]] ; then
+            do_help
+            exit 0
+        fi
+    done
+}            
+
 
 DEBUG=0
+CLEAN=0
+REMOVE_CBR=0
+
+check_args $*
 
 workdir="${HOME}/var/cbr2html"
 template="gen.tmpl"
-
-# we prefer gnu-sed - required on *BSD / OSX platforms, regular sed is fine on Linux (cause its already GNU sed..)
-sed=$(which gsed)
-[ -z "$sed" ] || [ ! -x "$sed" ] && sed="$(which sed)"
-
 ls=$(which ls)
 
 tmpl="${workdir}/${template}"
 
 
-if [ "$1" = "clean" ] ; then
+if [ $CLEAN = "1" ] ; then
     echo "Cleaning up previous run garbage.."
     rm -f *jpg gen* *include* *html
     exit 0
-fi
-
-if [ "$1" = "debug" ] ; then
-    DEBUG=1
 fi
 
 if [ -f *.cbz ] && [ -f *.cbr ] ; then
@@ -63,11 +101,11 @@ echo my @img_src = \( >> gen$$.pl
 jpg_count=$($ls -1  *.[jJ][pP][gG] | wc -l)
 last=$((jpg_count - 1))
 $ls -1  *[jJ][pP][gG]  > jpg$$.include
-$sed -i "s/'/\\\'/g" jpg$$.include
-$sed -i "s/^/'/" jpg$$.include 
-$sed -i "s/\$/'/" jpg$$.include
-$sed -i "1,${last}s/$/, /" jpg$$.include
-$sed -i "${jpg_count},${jpg_count}s/$/); /" jpg$$.include
+gsed -i "s/'/\\\'/g" jpg$$.include
+gsed -i "s/^/'/" jpg$$.include 
+gsed -i "s/\$/'/" jpg$$.include
+gsed -i "1,${last}s/$/, /" jpg$$.include
+gsed -i "${jpg_count},${jpg_count}s/$/); /" jpg$$.include
 
 echo "#!/usr/local/bin/perl" >> gen.pl
 echo >> gen.pl
@@ -82,3 +120,7 @@ echo "Cleaning up.."
 [[ $DEBUG == 1 ]] || rm ./jpg$$.include
 [[ $DEBUG == 1 ]] || rm ./gen$$.pl
 [[ $DEBUG == 1 ]] || rm ./gen.pl
+if [[ $REMOVE_CBR == 1 ]] ; then 
+    echo "Removing source file \"$file\".."
+    rm "$file"
+fi
